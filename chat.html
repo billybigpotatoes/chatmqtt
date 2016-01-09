@@ -1,0 +1,76 @@
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+<h1>Pi Chat</h1>
+
+
+<form onsubmit="return transmit()" name="chatform">
+<input type="text" name="message" />
+<br/>
+<a onclick="javascript: transmit()">Transmit</a>
+</form> 
+
+<ol class="rectangle-list" id="message"></ol>
+
+<script src="mqttws31.js"></script>
+<script>
+// Create a client instance
+client = new Paho.MQTT.Client(location.hostname, 8080, makeid());
+
+// set callback handlers
+client.onConnectionLost = onConnectionLost;
+client.onMessageArrived = onMessageArrived;
+
+// connect the client
+client.connect({onSuccess:onConnect});
+
+// called when the client connects
+function onConnect() {
+  // Once a connection has been made, make a subscription and send a message.
+  console.log("onConnect");
+  client.subscribe("/World");
+  message = new Paho.MQTT.Message("Hello");
+  message.destinationName = "/World";
+  client.send(message); 
+}
+
+// called when the client loses its connection
+function onConnectionLost(responseObject) {
+  if (responseObject.errorCode !== 0) {
+    console.log("onConnectionLost:"+responseObject.errorMessage);
+  }
+}
+
+// called when a message arrives
+function onMessageArrived(message) {
+  console.log("onMessageArrived:"+message.payloadString);
+  document.getElementById('message').innerHTML ='<li><a href="#">'+message.payloadString +'</a></li>' + document.getElementById('message').innerHTML;
+}
+
+function transmit() {
+  var msg = document.chatform.message.value;
+  message = new Paho.MQTT.Message(msg);
+  message.destinationName = "/World";
+  client.send(message);
+  document.chatform.message.value = '';
+  return false;
+}
+
+function makeid()
+{
+    var text = "id";
+    var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+    for( var i=0; i < 5; i++ )
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+    return text;
+}
+</script>
+
+
+</body>
+</html>
